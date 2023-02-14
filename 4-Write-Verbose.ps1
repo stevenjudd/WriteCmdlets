@@ -1,21 +1,21 @@
 function demoVerbose1 () {
-    [CmdletBinding()]
-    param()
-    Write-Verbose "Demos are cool"
+  [CmdletBinding()]
+  param()
+  Write-Verbose 'Demos are cool'
 }
 
 function demoVerbose2 () {
-    [CmdletBinding()]
-    param()
-    Write-Verbose "Demos are cool"
+  [CmdletBinding()]
+  param()
+  Write-Verbose 'Demos are cool'
 }
 
 function demoVerbose3 () {
-    param(
-        [parameter()]
-        [string]$message
-    )
-    Write-Verbose $message
+  param(
+    [parameter()]
+    [string]$message
+  )
+  Write-Verbose $message
 }
 
 Wait-Debugger

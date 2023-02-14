@@ -1,6 +1,6 @@
 function demoInfo1 {
-    Get-ChildItem $pwd
-    Write-Information "Done!" -InformationAction Continue
+  Get-ChildItem $pwd
+  Write-Information 'Done!' -InformationAction Continue
 }
 
 Wait-Debugger
