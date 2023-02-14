@@ -1,13 +1,15 @@
 function demoVerbose1 () {
   [CmdletBinding()]
   param()
-  Write-Verbose 'Demos are cool'
+  Write-Verbose 'Why do action oriented operating system languages return so much data?'
+  Write-Verbose 'Because they are Verb-OS'
 }
 
 function demoVerbose2 () {
   [CmdletBinding()]
   param()
-  Write-Verbose 'Demos are cool'
+  Write-Verbose 'Why do action oriented operating system languages return so much data?'
+  Write-Verbose 'Because they are Verb-OS'
 }
 
 function demoVerbose3 () {
@@ -20,9 +22,8 @@ function demoVerbose3 () {
 
 Wait-Debugger
 demoVerbose1 -Verbose
-Wait-Debugger
+# Wait-Debugger
 demoVerbose2 -Verbose 4> Verbose.txt
 Get-Content Verbose.txt
-Wait-Debugger
-demoVerbose3 "Advanced function mode enabled" -Verbose
-Wait-Debugger
+# Wait-Debugger
+demoVerbose3 'Advanced function mode enabled' -Verbose

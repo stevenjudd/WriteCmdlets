@@ -1,13 +1,15 @@
 function demoDebug1 () {
   [CmdletBinding()]
   param()
-  Write-Debug 'Console Debugging is not cool'
+  Write-Debug 'What did one developer say to the other when they found the error?'
+  Write-Debug "It's debug."
 }
 
 function demoDebug2 () {
   [CmdletBinding()]
   param()
-  Write-Debug 'Console Debugging is not cool'
+  Write-Debug 'What did one developer say to the other when they found the error?'
+  Write-Debug "It's debug."
 }
 
 Wait-Debugger

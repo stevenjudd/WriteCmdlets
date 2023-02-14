@@ -1,11 +1,13 @@
 function demoInfo1 {
   Get-ChildItem $pwd
-  Write-Information 'Done!' -InformationAction Continue
+  Write-Information 'Why does military data look so orderly?' -InformationAction Continue
+  Write-Information "Because it's in formation!" -InformationAction Continue
 }
 
 function demoInfo2 {
   Get-ChildItem $pwd
-  Write-Information 'Done!'
+  Write-Information 'Why does military data look so orderly?' -InformationAction Continue
+  Write-Information "Because it's in formation!" -InformationAction Continue
 }
 
 Wait-Debugger
