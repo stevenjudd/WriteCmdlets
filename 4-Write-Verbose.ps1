@@ -1,15 +1,18 @@
+$question = 'Why do action oriented operating systems return so much data?'
+$answer = 'Because they are Verb-OS'
+
 function demoVerbose1 () {
   [CmdletBinding()]
   param()
-  Write-Verbose 'Why do action oriented operating system languages return so much data?'
-  Write-Verbose 'Because they are Verb-OS'
+  Write-Verbose $question
+  Write-Verbose $answer
 }
 
 function demoVerbose2 () {
   [CmdletBinding()]
   param()
-  Write-Verbose 'Why do action oriented operating system languages return so much data?'
-  Write-Verbose 'Because they are Verb-OS'
+  Write-Verbose $question
+  Write-Verbose $answer
 }
 
 function demoVerbose3 () {
