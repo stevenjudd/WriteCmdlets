@@ -1,5 +1,10 @@
+#region Setup
 $question = 'Why do action oriented operating systems return so much data?'
-$answer = 'Because they are Verb-OS'
+$answer = 'QgBlAGMAYQB1AHMAZQAgAHQAaABlAHkAIABhAHIAZQAgAFYAZQByAGIALQBPAFMA'
+$answer = [System.Text.Encoding]::Unicode.GetString(
+  [System.Convert]::FromBase64String($answer))
+#endregion Setup
+# ==============================================================================
 
 function demoVerbose1 () {
   [CmdletBinding()]
@@ -9,13 +14,6 @@ function demoVerbose1 () {
 }
 
 function demoVerbose2 () {
-  [CmdletBinding()]
-  param()
-  Write-Verbose $question
-  Write-Verbose $answer
-}
-
-function demoVerbose3 () {
   param(
     [parameter()]
     [string]$message
@@ -26,7 +24,7 @@ function demoVerbose3 () {
 Wait-Debugger
 demoVerbose1 -Verbose
 # Wait-Debugger
-demoVerbose2 -Verbose 4> Verbose.txt
+demoVerbose1 -Verbose 4> Verbose.txt
 Get-Content Verbose.txt
 # Wait-Debugger
-demoVerbose3 'Advanced function mode enabled' -Verbose
+demoVerbose2 'Advanced function mode enabled' -Verbose

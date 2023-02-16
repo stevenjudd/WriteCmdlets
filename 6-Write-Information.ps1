@@ -1,18 +1,19 @@
+#region Setup
 $question = 'Why does military data look so orderly?'
-$answer = "Because it's in formation!"
+$answer = 'QgBlAGMAYQB1AHMAZQAgAGkAdAAnAHMAIABpAG4AIABmAG8AcgBtAGEAdABpAG8Abg' +
+'AhAA=='
+$answer = [System.Text.Encoding]::Unicode.GetString(
+  [System.Convert]::FromBase64String($answer))
+#endregion Setup
+# ==============================================================================
+
 function demoInfo1 {
-  Get-ChildItem $pwd
+  Get-ChildItem $pwd *-Write-*
   Write-Information $question -InformationAction Continue
   Write-Information $answer -InformationAction Continue
 }
 
 function demoInfo2 {
-  Get-ChildItem $pwd
-  Write-Information $question -InformationAction Continue
-  Write-Information $answer -InformationAction Continue
-}
-
-function demoInfo3 {
   $MessageText = 'Here is the info for which you asked'
   $Message1 = Write-Host $MessageText -ForegroundColor Cyan
   $Message1
@@ -35,13 +36,11 @@ $results = demoInfo1
 $results | Get-Member | Select-Object -Unique TypeName
 $results
 Wait-Debugger
-demoInfo2
-Wait-Debugger
-demoInfo2 6> Information.txt
+demoInfo1 6> Information.txt
 Get-Content Information.txt
 Wait-Debugger
 $results = demoInfo1 6>&1
 $results | Get-Member | Select-Object -Unique TypeName
 $results
 Wait-Debugger
-demoInfo3
+demoInfo2

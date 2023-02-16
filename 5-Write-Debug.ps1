@@ -1,6 +1,11 @@
+#region Setup
 $question = 'What did one developer say to the other when they increased ' +
-  'logging and found the error?'
-$answer = "It's debug."
+'logging and found the error?'
+$answer = 'SQB0ACcAcwAgAGQAZQBiAHUAZwAuAA=='
+$answer = [System.Text.Encoding]::Unicode.GetString(
+  [System.Convert]::FromBase64String($answer))
+#endregion Setup
+# ==============================================================================
 
 function demoDebug1 () {
   [CmdletBinding()]
@@ -12,17 +17,10 @@ function demoDebug1 () {
 function demoDebug2 () {
   [CmdletBinding()]
   param()
-  Write-Debug $question
-  Write-Debug $answer
-}
-
-function demoDebug3 () {
-  [CmdletBinding()]
-  param()
-  $FileInfo = Get-ChildItem -Path $PSScriptRoot -Filter '*.ps1'
-  foreach ($item in $FileInfo) {
+  $fileInfo = Get-ChildItem -Path $PSScriptRoot -Filter '*.ps1'
+  foreach ($item in $fileInfo) {
     Write-Verbose "Processing file: $($item.FullName)"
-    Write-Debug $($FileInfo | Select-Object *)
+    Write-Debug $($item | Select-Object * | Out-String)
   }
   
 }
@@ -30,12 +28,13 @@ function demoDebug3 () {
 Wait-Debugger
 demoDebug1 -Debug
 # Wait-Debugger
-demoDebug2 -Debug 5> Debug.txt
+demoDebug1 -Debug 5> Debug.txt
 Get-Content Debug.txt
 Wait-Debugger
-demoDebug3
-demoDebug3 -Verbose
+demoDebug2
 Wait-Debugger
-demoDebug3 -Verbose -Debug
+demoDebug2 -Verbose
 Wait-Debugger
-demoDebug3 -Verbose -Debug 5> FileDebug.txt
+demoDebug2 -Verbose -Debug
+Wait-Debugger
+demoDebug2 -Verbose -Debug 5> FileDebug.txt
