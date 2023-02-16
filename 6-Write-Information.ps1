@@ -1,5 +1,5 @@
 #region Setup
-$question = 'Why does military data look so orderly?'
+$question = 'Why does military parade data look so orderly?'
 $answer = 'QgBlAGMAYQB1AHMAZQAgAGkAdAAnAHMAIABpAG4AIABmAG8AcgBtAGEAdABpAG8Abg' +
 'AhAA=='
 $answer = [System.Text.Encoding]::Unicode.GetString(
