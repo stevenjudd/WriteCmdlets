@@ -1,9 +1,11 @@
 function createAzureVm {
   $VMLocalAdminSecurePassword = Read-Host -Prompt 'Enter password' -AsSecureString
-  $EmailRecipient = Read-Host -Prompt 'Enter email to notify about shutdown' -AsSecureString
+  # add validation for the password complexity
+  $EmailRecipient = Read-Host -Prompt 'Enter email to notify about shutdown'
+  # add validation for email format
 
   $ErrorActionPreference = 'Stop'
-  $NameRoot = switch ($true) {
+  $userName = switch ($true) {
     $IsLinux {
       $env:USER
     }
@@ -16,7 +18,8 @@ function createAzureVm {
     default {
       $env:USERNAME
     }
-  } + 'W10VM'
+  } 
+  $NameRoot = 'W10VM' + $userName
 
   $Supervisor = 'Da Boss'
   $Subscription = 'NotFree'
@@ -27,7 +30,7 @@ function createAzureVm {
     'IT Manager'       = 'Big Boss'
     'IT Support Group' = 'Digital Security'
     'Application Name' = 'Digital Security Detonate OS'
-    'IT Supervisor'    = $Supervisor
+    'IT Supervisor'    = "$Supervisor"
   }
   $VMName = "$NameRoot"
   $VMSize = 'Standard_B2s'
@@ -57,6 +60,12 @@ function createAzureVm {
     New-AzResourceGroup @newAzResourceGroupParam
   }
 
+  #region Create security rules
+  $securityRules = @()
+  $priority = 100
+
+  # base params
+
   $NewAzNetworkSecurityRuleConfigParam = @{
     'Access'                   = 'Allow' 
     'Protocol'                 = 'Tcp'
@@ -65,28 +74,126 @@ function createAzureVm {
     'SourcePortRange'          = '*'
     'DestinationAddressPrefix' = '*'
   }
-  $NsgRule1 = New-AzNetworkSecurityRuleConfig -Name 'rdp-rule' -Description 'Allow RDP' -Priority 100 -DestinationPortRange 3389 @NewAzNetworkSecurityRuleConfigParam
-  # $NsgRule2 = New-AzNetworkSecurityRuleConfig -Name 'http-rule' -Description 'Allow HTTP' -Priority 101 -DestinationPortRange 80 @NewAzNetworkSecurityRuleConfigParam
-  # $NsgRule3 = New-AzNetworkSecurityRuleConfig -Name 'https-rule' -Description 'Allow HTTPS' -Priority 102 -DestinationPortRange 443 @NewAzNetworkSecurityRuleConfigParam
-  $nsg = New-AzNetworkSecurityGroup -Name $NetworkSecurityGroupName -ResourceGroupName $ResourceGroupName -Location $LocationName -SecurityRules $NsgRule1 #, $NsgRule2, $NsgRule3
 
-  $SingleSubnet = New-AzVirtualNetworkSubnetConfig -Name $SubnetName -AddressPrefix $SubnetAddressPrefix
-  $Vnet = New-AzVirtualNetwork -Name $NetworkName -ResourceGroupName $ResourceGroupName -Location $LocationName -AddressPrefix $VnetAddressPrefix -Subnet $SingleSubnet
-  $PublicIp = New-AzPublicIpAddress -Name $PublicIpAddress -ResourceGroupName $ResourceGroupName -AllocationMethod Dynamic -Location $LocationName
-  $NIC = New-AzNetworkInterface -Name $NICName -ResourceGroupName $ResourceGroupName -Location $LocationName -SubnetId $Vnet.Subnets[0].Id -PublicIpAddressId $PublicIp.Id -NetworkSecurityGroupId $Nsg.Id
+  # Enable to allow RDP traffic
+  $NewAzNetworkSecurityRuleConfigParam.Name = 'rdp-rule'
+  $NewAzNetworkSecurityRuleConfigParam.Description = 'Allow RDP'
+  $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 80
+  $NewAzNetworkSecurityRuleConfigParam.Priority = $priority
+  $NsgRule1 = New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
+  $SecurityRules += $NsgRule1
+  $priority++
+  <#
+  # Enable to allow http traffic
+  $NewAzNetworkSecurityRuleConfigParam.Name = 'http-rule'
+  $NewAzNetworkSecurityRuleConfigParam.Description = 'Allow HTTP'
+  $NewAzNetworkSecurityRuleConfigParam.Priority = 101
+  $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 80
+  $NsgRule2 = New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
+  $SecurityRules += $NsgRule2
+  # Enable to allow https traffic
+  $NewAzNetworkSecurityRuleConfigParam.Name = 'https-rule'
+  $NewAzNetworkSecurityRuleConfigParam.Description = 'Allow HTTPS'
+  $NewAzNetworkSecurityRuleConfigParam.Priority = 102
+  $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 443
+  $NsgRule3 = New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
+  $SecurityRules += $NsgRule3
+  #>
 
-  $Credential = New-Object System.Management.Automation.PSCredential ($VMLocalAdminUser, $VMLocalAdminSecurePassword);
+  #endregion Create security rules
 
-  $VirtualMachine = New-AzVMConfig -VMName $VMName -VMSize $VMSize
-  $VirtualMachine = Set-AzVMOperatingSystem -VM $VirtualMachine -Windows -ComputerName $VMName -Credential $Credential -ProvisionVMAgent -EnableAutoUpdate
-  $VirtualMachine = Add-AzVMNetworkInterface -VM $VirtualMachine -Id $NIC.Id
-  $VirtualMachine = Set-AzVMSourceImage -VM $VirtualMachine -PublisherName $VMPublisherName -Offer $VMOffer -Skus $VMSkus -Version $VMVersion
+  # Apply security rules
+  $NewAzNetworkSecurityGroupParam = @{
+    'Name'              = $NetworkSecurityGroupName
+    'ResourceGroupName' = $ResourceGroupName
+    'Location'          = $LocationName
+    'SecurityRules'     = $SecurityRules
+  }
+  $nsg = New-AzNetworkSecurityGroup @NewAzNetworkSecurityGroupParam
+
+  $NewAzVirtualNetworkSubnetConfigParam = @{
+    'Name'          = $SubnetName
+    'AddressPrefix' = $SubnetAddressPrefix
+  }
+  $SingleSubnet = New-AzVirtualNetworkSubnetConfig @NewAzVirtualNetworkSubnetConfigParam
+
+  $NewAzVirtualNetworkParam = @{
+    'Name'              = $NetworkName
+    'ResourceGroupName' = $ResourceGroupName
+    'Location'          = $LocationName
+    'AddressPrefix'     = $VnetAddressPrefix
+    'Subnet'            = $SingleSubnet
+  }
+  $Vnet = New-AzVirtualNetwork @NewAzVirtualNetworkParam
+
+  $NewAzPublicIpAddressParam = @{
+    'Name'              = $PublicIpAddress
+    'ResourceGroupName' = $ResourceGroupName
+    'AllocationMethod'  = 'Dynamic'
+    'Location'          = $LocationName
+  }
+  $PublicIp = New-AzPublicIpAddress @NewAzPublicIpAddressParam
+
+  $NewAzNetworkInterfaceParam = @{
+    'Name'                   = $NICName
+    'ResourceGroupName'      = $ResourceGroupName
+    'Location'               = $LocationName
+    'SubnetId'               = $Vnet.Subnets[0].Id
+    'PublicIpAddressId'      = $PublicIp.Id
+    'NetworkSecurityGroupId' = $Nsg.Id
+  }
+  $NIC = New-AzNetworkInterface @NewAzNetworkInterfaceParam
+
+
+  $Credential = New-Object System.Management.Automation.PSCredential (
+    $VMLocalAdminUser, $VMLocalAdminSecurePassword
+  )
+
+  $NewAzVMConfigParam = @{
+    'VMName' = $VMName
+    'VMSize' = $VMSize
+  }
+  $VirtualMachine = New-AzVMConfig @NewAzVMConfigParam
+  
+  $SetAzVMOperatingSystemParam = @{
+    'VM'               = $VirtualMachine
+    'Windows'          = $true
+    'ComputerName'     = $VMName
+    'Credential'       = $Credential
+    'ProvisionVMAgent' = $true
+    'EnableAutoUpdate' = $true
+  }
+  $VirtualMachine = Set-AzVMOperatingSystem @SetAzVMOperatingSystemParam
+
+  
+  $AddAzVMNetworkInterfaceParam = @{
+    'VM' = $VirtualMachine
+    'Id' = $NIC.Id
+  }
+  $VirtualMachine = Add-AzVMNetworkInterface @AddAzVMNetworkInterfaceParam
+  
+  $SetAzVMSourceImageParam = @{
+    'VM'            = $VirtualMachine
+    'PublisherName' = $VMPublisherName
+    'Offer'         = $VMOffer
+    'Skus'          = $VMSkus
+    'Version'       = $VMVersion
+  }
+  $VirtualMachine = Set-AzVMSourceImage @SetAzVMSourceImageParam
 
   Write-Host 'Creating VM. Please wait...'
-  New-AzVM -ResourceGroupName $ResourceGroupName -Location $LocationName -VM $VirtualMachine -Verbose
+  $NewAzVMParam = @{
+    'ResourceGroupName' = $ResourceGroupName
+    'Location'          = $LocationName
+    'VM'                = $VirtualMachine
+    'Verbose'           = $true
+  }
+  New-AzVM @NewAzVMParam
   $NewVm = Get-AzVM -ResourceGroupName $ResourceGroupName -Name $VMName
   # create autoshutdown object
-  $ShutDownResourceId = $NewVm.Id -replace 'Microsoft\.Compute\/virtualMachines\/', 'microsoft.devtestlab/schedules/shutdown-computevm-'
+  $search = 'Microsoft\.Compute\/virtualMachines\/'
+  $replace = 'microsoft.devtestlab/schedules/shutdown-computevm-'
+  $ShutDownResourceId = $NewVm.Id -replace $search, $replace
   $ShutDownResourceProperties = @{
     'Status'               = 'Enabled'
     'TaskType'             = 'ComputeVmShutdownTask'
@@ -95,7 +202,7 @@ function createAzureVm {
     'NotificationSettings' = @{
       'Status'             = 'Enabled'
       'TimeInMinutes'      = 30
-      'EmailRecipient'     = $EmailRecipient
+      'EmailRecipient'     = "$EmailRecipient"
       'NotificationLocale' = 'en'
     }
     'TargetResourceId'     = $NewVm.Id
@@ -112,16 +219,18 @@ function createAzureVm {
   $vmIpAddress = $((Get-AzPublicIpAddress -ResourceName $PublicIpAddress).IpAddress)
   switch ($true) {
     $IsLinux {
-      Write-Host "Run mstsc and connect to $vmIpAddress"
+      Write-Host "Run mstsc and connect as '$VMLocalAdminUser' to $vmIpAddress"
     }
     $IsMacOS {
-      Write-Host "Run mstsc and connect to $vmIpAddress"
+      Write-Host "Run mstsc and connect as '$VMLocalAdminUser' to $vmIpAddress"
     }
     $IsWindows {
-      mstsc /v:$vmIpAddress
+      Write-Host "Connect as '$VMLocalAdminUser' to $vmIpAddress"
+      mstsc /v:$vmIpAddress /prompt
     }
     default {
-      mstsc /v:$vmIpAddress
+      Write-Host "Connect as '$VMLocalAdminUser' to $vmIpAddress"
+      mstsc /v:$vmIpAddress /prompt
     }
   }
 }
