@@ -1,9 +1,17 @@
-function createAzureVm {
-  $VMLocalAdminSecurePassword = Read-Host -Prompt 'Enter password' -AsSecureString
-  # add validation for the password complexity
-  $EmailRecipient = Read-Host -Prompt 'Enter email to notify about shutdown'
-  # add validation for email format
+function CreateAzureVm {
+  param(
+    [parameter(Mandatory)]
+    [string]$EmailRecipient,
+    # add validation for email format
+    [parameter(Mandatory)]
+    [securestring]$VMLocalAdminSecurePassword,
+    # add validation for the password complexity
+    [string]$Subscription,
+    [string]$VMLocalAdminUser,
+    [string]$LocationName
 
+  )
+  
   $ErrorActionPreference = 'Stop'
   $userName = switch ($true) {
     $IsLinux {
@@ -20,17 +28,12 @@ function createAzureVm {
     }
   } 
   $NameRoot = 'W10VM' + $userName
-
-  $Supervisor = 'Da Boss'
-  $Subscription = 'NotFree'
-  $VMLocalAdminUser = 'vmAdmin'
-  $LocationName = 'southcentralus'
   $ResourceGroupName = "$NameRoot"
   $ResourceGroupTag = @{
-    'IT Manager'       = 'Big Boss'
-    'IT Support Group' = 'Digital Security'
+    'Supervisor'       = 'Da Boss'
+    'Manager'          = 'Big Boss'
+    'Support Group'    = 'Digital Security'
     'Application Name' = 'Digital Security Detonate OS'
-    'IT Supervisor'    = "$Supervisor"
   }
   $VMName = "$NameRoot"
   $VMSize = 'Standard_B2s'
@@ -234,4 +237,12 @@ function createAzureVm {
     }
   }
 }
-createAzureVm
+
+$CreateAzureVM = @{
+  'VMLocalAdminSecurePassword' = (Read-Host -Prompt 'Enter password' -AsSecureString)
+  'EmailRecipient'             = (Read-Host -Prompt 'Enter email to notify about shutdown')
+  'Subscription'               = 'NotFree'
+  'VMLocalAdminUser'           = 'vmAdmin'
+  'LocationName'               = 'southcentralus'
+}
+CreateAzureVm @CreateAzureVM
