@@ -1,4 +1,4 @@
-function CreateAzureVm {
+function NewSjAzureWin10Vm {
   param(
     [parameter(Mandatory)]
     [string]$EmailRecipient,
@@ -12,6 +12,7 @@ function CreateAzureVm {
 
   )
   
+  #region Variables
   $ErrorActionPreference = 'Stop'
   $userName = switch ($true) {
     $IsLinux {
@@ -49,12 +50,31 @@ function CreateAzureVm {
   $VnetAddressPrefix = '10.0.0.0/24'
   $PublicIpAddress = "$NameRoot-publicip"
   $NetworkSecurityGroupName = "$NameRoot-nsg"
+  #endregion Variables
 
+  if (-not (Get-AzSubscription -ErrorAction SilentlyContinue)) {
+    throw 'Unable to get Azure Subscription. Please connect using Add-AzAccount.'
+  }
+  
   Set-AzContext -Subscription $Subscription
 
-  if (-not 
-    (Get-AzResourceGroup -Name $ResourceGroupName -ErrorAction SilentlyContinue)
-  ) {
+  $getAzVmParam = @{
+    'ResourceGroupName' = $ResourceGroupName
+    'Name'              = $VMName
+    'ErrorAction'       = 'SilentlyContinue'
+  }
+  if (Get-AzVM @getAzVmParam) {
+    Write-Warning 'VM already exists'
+    return
+  }
+
+  $GetAzReourceGroupParam = @{
+    'Name'        = $ResourceGroupName
+    'ErrorAction' = 'SilentlyContinue'
+  }
+  if (Get-AzResourceGroup @GetAzReourceGroupParam) {
+    Write-Warning 'ResourceGroup already exists'
+  } else {
     $newAzResourceGroupParam = @{
       Name     = $ResourceGroupName
       Location = $LocationName
@@ -81,26 +101,25 @@ function CreateAzureVm {
   # Enable to allow RDP traffic
   $NewAzNetworkSecurityRuleConfigParam.Name = 'rdp-rule'
   $NewAzNetworkSecurityRuleConfigParam.Description = 'Allow RDP'
-  $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 80
+  $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 3389
   $NewAzNetworkSecurityRuleConfigParam.Priority = $priority
-  $NsgRule1 = New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
-  $SecurityRules += $NsgRule1
+  $SecurityRules += New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
   $priority++
   <#
   # Enable to allow http traffic
   $NewAzNetworkSecurityRuleConfigParam.Name = 'http-rule'
   $NewAzNetworkSecurityRuleConfigParam.Description = 'Allow HTTP'
-  $NewAzNetworkSecurityRuleConfigParam.Priority = 101
+  $NewAzNetworkSecurityRuleConfigParam.Priority = $priority
   $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 80
-  $NsgRule2 = New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
-  $SecurityRules += $NsgRule2
+  $SecurityRules += New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
+  $priority++
   # Enable to allow https traffic
   $NewAzNetworkSecurityRuleConfigParam.Name = 'https-rule'
   $NewAzNetworkSecurityRuleConfigParam.Description = 'Allow HTTPS'
-  $NewAzNetworkSecurityRuleConfigParam.Priority = 102
+  $NewAzNetworkSecurityRuleConfigParam.Priority = $priority
   $NewAzNetworkSecurityRuleConfigParam.DestinationPortRange = 443
-  $NsgRule3 = New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
-  $SecurityRules += $NsgRule3
+  $SecurityRules += New-AzNetworkSecurityRuleConfig @NewAzNetworkSecurityRuleConfigParam
+  $priority++
   #>
 
   #endregion Create security rules
@@ -184,7 +203,9 @@ function CreateAzureVm {
   }
   $VirtualMachine = Set-AzVMSourceImage @SetAzVMSourceImageParam
 
-  Write-Host 'Creating VM. Please wait...'
+  Write-Host '===========================' -ForegroundColor Green
+  Write-Host 'Creating VM. Please wait...' -ForegroundColor Green
+  Write-Host '===========================' -ForegroundColor Green
   $NewAzVMParam = @{
     'ResourceGroupName' = $ResourceGroupName
     'Location'          = $LocationName
@@ -238,11 +259,11 @@ function CreateAzureVm {
   }
 }
 
-$CreateAzureVM = @{
-  'VMLocalAdminSecurePassword' = (Read-Host -Prompt 'Enter password' -AsSecureString)
+$NewSjAzureWin10Vm = @{
   'EmailRecipient'             = (Read-Host -Prompt 'Enter email to notify about shutdown')
+  'VMLocalAdminSecurePassword' = (Read-Host -Prompt 'Enter password for the Admin account' -AsSecureString)
   'Subscription'               = 'NotFree'
   'VMLocalAdminUser'           = 'vmAdmin'
   'LocationName'               = 'southcentralus'
 }
-CreateAzureVm @CreateAzureVM
+NewSjAzureWin10Vm @NewSjAzureWin10Vm
